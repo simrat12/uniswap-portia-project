@@ -1,1 +1,94 @@
 # Uniswap Portia Pipeline
+
+A pipeline that uses Portia to query Uniswap data and execute trades.
+
+## Features
+
+- Query Uniswap data using natural language
+- Execute trades on Uniswap using the UniswapTrader
+- Streamlit UI for easy interaction
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/uniswap-portia-project.git
+cd uniswap-portia-project
+```
+
+2. Install the dependencies:
+```bash
+pip install -e .
+```
+
+3. Create a `.env` file based on the `.env.example` file:
+```bash
+cp .env.example .env
+```
+
+4. Edit the `.env` file with your API keys and wallet address.
+
+## Usage
+
+### Streamlit UI
+
+Run the Streamlit app:
+```bash
+streamlit run src/streamlit_app.py
+```
+
+This will open a web interface where you can:
+- Query Uniswap data using natural language
+- Execute trades on Uniswap
+
+### Command Line
+
+#### Query Uniswap Data
+
+```bash
+python -m src.main "What's the volume for WETH last week?"
+```
+
+#### Execute Trades
+
+Use the example script to execute trades:
+```bash
+python src/examples/trade_example.py --token-in ETH --token-out DAI --amount-in 1000000000000000000
+```
+
+To execute the trade after getting the optimal route:
+```bash
+python src/examples/trade_example.py --token-in ETH --token-out DAI --amount-in 1000000000000000000 --execute
+```
+
+## Configuration
+
+The following environment variables are required:
+
+- `OPENAI_API_KEY`: Your OpenAI API key
+- `PORTIA_API_KEY`: Your Portia API key
+- `ENSO_API_KEY`: Your Enso API key
+- `WALLET_ADDRESS`: Your Ethereum wallet address
+- `UNISWAP_SUBGRAPH_ENDPOINT`: The GraphQL endpoint for the Uniswap subgraph
+
+## Development
+
+### Project Structure
+
+- `src/main.py`: Main entry point for the pipeline
+- `src/custom_tool.py`: Custom tool for querying Uniswap data
+- `src/config.py`: Configuration for the project
+- `src/uniswap_trader.py`: Module for executing trades on Uniswap
+- `src/streamlit_app.py`: Streamlit UI for the project
+- `src/examples/`: Example scripts
+
+### Adding New Features
+
+1. Add your feature to the appropriate module
+2. Update the Streamlit UI if necessary
+3. Add tests for your feature
+4. Update the documentation
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

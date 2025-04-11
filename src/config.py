@@ -25,6 +25,10 @@ class UniswapProjectConfig(BaseModel):
         default_factory=lambda: SecretStr(os.getenv("PORTIA_API_KEY", "")),
         description="Portia API key for cloud usage"
     )
+    enso_api_key: SecretStr = Field(
+        default_factory=lambda: SecretStr(os.getenv("ENSO_API_KEY", "")),
+        description="Enso API key for Uniswap trading"
+    )
 
     # Optionally, add more toggles or references to LLM providers
     # or reuse the actual Portia Config if you want.

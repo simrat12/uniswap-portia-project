@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from portia import Portia, default_config
 from .custom_tool import CustomTool
 from .config import UniswapProjectConfig
+from .uniswap_trader import get_uniswap_trader, execute_uniswap_trade
 
 load_dotenv()
 
@@ -49,3 +50,15 @@ if __name__ == "__main__":
 
     outputs = run_pipeline(user_prompt)
     print("[DEBUG] Outputs:", outputs)
+    
+    # Example of using the UniswapTrader
+    # Uncomment and modify these values to execute a trade
+    """
+    from_address = "your-address"
+    amount_in = "1000000000000000000"  # 1 ETH in wei
+    token_in = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"  # ETH
+    token_out = "0x6b175474e89094c44da98b954eedeac495271d0f"  # DAI
+    
+    tx_hash = execute_uniswap_trade(from_address, amount_in, token_in, token_out)
+    print(f"Trade executed with transaction hash: {tx_hash}")
+    """
