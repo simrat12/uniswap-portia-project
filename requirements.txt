@@ -1,0 +1,5 @@
+portia-sdk-python
+requests
+streamlit
+python-dotenv
+pydantic 

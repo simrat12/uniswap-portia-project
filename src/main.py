@@ -1,9 +1,13 @@
 import os
+import logging
 from dotenv import load_dotenv
 from portia import Portia, default_config
-from .custom_tool import CustomTool
-from .config import UniswapProjectConfig
-from .uniswap_trader import get_uniswap_trader, execute_uniswap_trade
+from custom_tool import CustomTool
+from config import UniswapProjectConfig
+from uniswap_trader import get_uniswap_trader, execute_uniswap_trade
+
+# Set up logging
+logger = logging.getLogger("uniswap_portia.pipeline")
 
 load_dotenv()
 
@@ -11,6 +15,8 @@ def get_portia_instance():
     """
     Set up a Portia instance with default_config, adding your custom tool.
     """
+    logger.info("Initializing Portia instance")
+    
     # 1) Possibly create or retrieve your own config
     project_config = UniswapProjectConfig()
     # 2) Build a Portia config
@@ -21,9 +27,11 @@ def get_portia_instance():
 
     # 4) Instantiate your custom tool
     custom_tool = CustomTool()
+    logger.info("Custom tool initialized")
 
     # 5) Create the Portia instance with your custom tool
     portia = Portia(config=config, tools=[custom_tool])
+    logger.info("Portia instance initialized successfully")
     return portia
 
 def run_pipeline(user_prompt: str):
@@ -34,9 +42,18 @@ def run_pipeline(user_prompt: str):
       - Possibly calls your custom tool (Uniswap data) behind the scenes
       - Returns the final output or plan_run
     """
+    logger.info(f"Running pipeline with user prompt: {user_prompt}")
+    
     portia = get_portia_instance()
+    
+    logger.info("Planning with Portia")
     plan = portia.plan(user_prompt)
+    logger.info(f"Plan created: {plan}")
+    
+    logger.info("Running plan with Portia")
     plan_run = portia.run_plan(plan)
+    logger.info(f"Plan run completed with {len(plan_run.outputs.step_outputs)} outputs")
+    
     return plan_run.outputs.step_outputs
 
 if __name__ == "__main__":
@@ -48,7 +65,9 @@ if __name__ == "__main__":
     else:
         user_prompt = "Tell me about the last 10 trades on Uniswap"
 
+    logger.info(f"Running main script with prompt: {user_prompt}")
     outputs = run_pipeline(user_prompt)
+    logger.info(f"Pipeline outputs: {outputs}")
     print("[DEBUG] Outputs:", outputs)
     
     # Example of using the UniswapTrader

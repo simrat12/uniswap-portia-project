@@ -5,6 +5,7 @@ producing JSON, or generating a PDF/pptx, etc.
 """
 
 from portia.tool import Tool, ToolRunContext
+from typing import Tuple
 # from pydantic import BaseModel, Field
 # import requests, python-pptx, etc.
 
@@ -16,8 +17,8 @@ class CustomTool(Tool):
     name: str = "Custom Uniswap Tool"
     description: str = "Handles Uniswap subgraph queries and returns a structured result"
 
-    # placeholders for schemas, etc.
-    output_schema = ("str", "Placeholder output")
+    # Add proper type annotation for output_schema
+    output_schema: Tuple[str, str] = ("str", "Placeholder output")
 
     def run(self, ctx: ToolRunContext) -> str:
         # placeholder logic

@@ -1,0 +1,7 @@
+portia-sdk-python@ file:///home/simrat12/portia-sdk-python
+requests
+streamlit
+python-dotenv
+pydantic
+eth-utils
+eth-hash[pycryptodome]

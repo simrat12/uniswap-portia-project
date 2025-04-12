@@ -1,15 +1,19 @@
 [project]
 name = "uniswap-portia-pipeline"
 version = "0.1.0"
-description = "A pipeline that uses Portia to query Uniswap data and produce presentations or outputs."
+description = "A pipeline that uses Portia to query Uniswap data and execute trades"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 
 dependencies = [
   "portia-sdk-python @ file:///home/simrat12/portia-sdk-python",
   "requests",
   "streamlit",
-  # add more if needed
+  "python-dotenv",
+  "pydantic",
+  "eth-utils",
+  "eth-hash[pycryptodome]",
+  "web3"
 ]
 
 [build-system]
