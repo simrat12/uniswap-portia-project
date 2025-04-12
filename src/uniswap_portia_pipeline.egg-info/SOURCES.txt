@@ -3,6 +3,7 @@ pyproject.toml
 src/__init__.py
 src/config.py
 src/custom_tool.py
+src/log_viewer.py
 src/main.py
 src/streamlit_app.py
 src/uniswap_trader.py

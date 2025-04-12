@@ -6,11 +6,12 @@ import streamlit as st
 import os
 import logging
 import sys
+import json
 from io import StringIO
 from dotenv import load_dotenv
 from main import run_pipeline
 from uniswap_trader import get_uniswap_trader, execute_uniswap_trade
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, to_normalized_address
 
 # Load environment variables
 load_dotenv()
@@ -40,14 +41,14 @@ log_handler = StreamlitLogHandler()
 log_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(log_handler)
 
-# Common token addresses
+# Common token addresses - ensure ETH is all lowercase
 COMMON_TOKENS = {
-    "ETH": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-    "DAI": "0x6b175474e89094c44da98b954eedeac495271d0f",
-    "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "USDT": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-    "WBTC": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-    "WETH": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "ETH": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",  # All lowercase for ETH
+    "DAI": "0x6b175474e89094c44da98b954eedeac495271d0f",  # All lowercase for DAI
+    "USDC": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",  # All lowercase for USDC
+    "USDT": "0xdac17f958d2ee523a2206206994597c13d831ec7",  # All lowercase for USDT
+    "WBTC": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",  # All lowercase for WBTC
+    "WETH": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  # All lowercase for WETH
 }
 
 def main():
@@ -114,40 +115,101 @@ def main():
                     logger.info(f"Getting optimal route for {amount_in} {token_in_option} to {token_out_option}")
                     trader = get_uniswap_trader()
                     
-                    # Ensure all parameters are properly formatted
-                    from_address = to_checksum_address(wallet_address)
-                    amount_in_str = str(amount_in)
-                    token_in_addr = to_checksum_address(token_in_address)
-                    token_out_addr = to_checksum_address(token_out_address)
+                    # Format parameters correctly for the Enso API
+                    # 1. fromAddress must be a single Ethereum address (checksummed)
+                    formatted_from_address = to_checksum_address(wallet_address)
                     
-                    logger.info(f"Formatted parameters: from={from_address}, amount={amount_in_str}, tokenIn={token_in_addr}, tokenOut={token_out_addr}")
+                    # 2. amountIn must be a list of strings
+                    formatted_amount_in = [str(amount_in)]
                     
+                    # 3. tokenIn must be a list of Ethereum addresses
+                    # For ETH, use the special format with mixed case
+                    if token_in_address.lower() == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":
+                        formatted_token_in = ["0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"]
+                    else:
+                        formatted_token_in = [token_in_address.lower()]
+                    
+                    # 4. tokenOut must be a list of Ethereum addresses
+                    formatted_token_out = [token_out_address.lower()]
+                    
+                    # Create the exact JSON structure that will be sent to Enso
+                    request_data = {
+                        "chainId": 1,
+                        "fromAddress": formatted_from_address,
+                        "routingStrategy": "router",
+                        "receiver": formatted_from_address,
+                        "spender": formatted_from_address,
+                        "amountIn": formatted_amount_in,
+                        "tokenIn": formatted_token_in,
+                        "tokenOut": formatted_token_out,
+                        "slippage": "50",
+                        "variableEstimates": None
+                    }
+                    
+                    # Log the formatted parameters
+                    logger.info(f"Formatted parameters:")
+                    logger.info(f"  from_address: {formatted_from_address}")
+                    logger.info(f"  amount_in: {formatted_amount_in}")
+                    logger.info(f"  token_in: {formatted_token_in}")
+                    logger.info(f"  token_out: {formatted_token_out}")
+                    
+                    # Log the final JSON being sent to Enso
+                    logger.info(f"FINAL JSON to Enso:\n{json.dumps(request_data, indent=2)}")
+                    
+                    # Call the API with the correctly formatted parameters
                     route_response = trader.get_optimal_route(
-                        from_address=from_address,
-                        amount_in=[amount_in_str],  # Wrap in list as required by the SDK
-                        token_in=[token_in_addr],   # Wrap in list as required by the SDK
-                        token_out=[token_out_addr]  # Wrap in list as required by the SDK
+                        from_address=formatted_from_address,
+                        amount_in=formatted_amount_in,
+                        token_in=formatted_token_in,
+                        token_out=formatted_token_out,
+                        variable_estimates=None
                     )
                     
-                    logger.info(f"Route found: {route_response.amount_out} {token_out_option} output")
-                    
-                    # Display route information
-                    st.subheader("Route Information")
-                    st.json({
-                        "From": from_address,
-                        "Amount In": amount_in_str,
-                        "Token In": token_in_addr,
-                        "Token Out": token_out_addr,
-                        "Estimated Output": route_response.amount_out,
-                        "Gas Estimate": route_response.gas,
-                        "Price Impact": f"{route_response.price_impact}%"
-                    })
+                    # Handle the case where route_response is a dictionary instead of a UniswapRouteResponse object
+                    if isinstance(route_response, dict):
+                        # Create a new response object with all required fields
+                        formatted_response = {
+                            "amount_out": route_response.get("amountOut", "0"),
+                            "gas": route_response.get("gas", "0"),
+                            "price_impact": route_response.get("priceImpact", "0"),
+                            "fee_amount": ["0"],  # Default value if not provided, as a list
+                            "created_at": route_response.get("createdAt", 0),  # Use integer 0 as default
+                            "tx": route_response.get("tx", {}),
+                            "route": route_response.get("route", [])
+                        }
+                        
+                        # Replace the original response with the formatted one
+                        route_response = formatted_response
+                        
+                        # Display route information
+                        st.subheader("Route Information")
+                        st.json({
+                            "From": formatted_from_address,
+                            "Amount In": formatted_amount_in,
+                            "Token In": formatted_token_in,
+                            "Token Out": formatted_token_out,
+                            "Estimated Output": route_response["amount_out"],
+                            "Gas Estimate": route_response["gas"],
+                            "Price Impact": f"{route_response['price_impact']}%"
+                        })
+                    else:
+                        # Display route information for UniswapRouteResponse object
+                        st.subheader("Route Information")
+                        st.json({
+                            "From": formatted_from_address,
+                            "Amount In": formatted_amount_in,
+                            "Token In": formatted_token_in,
+                            "Token Out": formatted_token_out,
+                            "Estimated Output": route_response.amount_out,
+                            "Gas Estimate": route_response.gas,
+                            "Price Impact": f"{route_response.price_impact}%"
+                        })
                     
                     # Execute trade button
                     if st.button("Execute Trade"):
                         with st.spinner("Executing trade..."):
                             try:
-                                logger.info(f"Executing trade for {amount_in_str} {token_in_option} to {token_out_option}")
+                                logger.info(f"Executing trade for {amount_in} {token_in_option} to {token_out_option}")
                                 tx_hash = trader.execute_trade(route_response)
                                 logger.info(f"Trade executed successfully with tx hash: {tx_hash}")
                                 st.success(f"Trade executed successfully! Transaction hash: {tx_hash}")

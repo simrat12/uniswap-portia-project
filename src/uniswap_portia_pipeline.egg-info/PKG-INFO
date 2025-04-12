@@ -11,6 +11,7 @@ Requires-Dist: python-dotenv
 Requires-Dist: pydantic
 Requires-Dist: eth-utils
 Requires-Dist: eth-hash[pycryptodome]
+Requires-Dist: web3
 
 # Uniswap Portia Pipeline
 
